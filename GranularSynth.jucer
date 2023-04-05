@@ -4,6 +4,8 @@
               companyName="ACM SIGMusic" companyWebsite="sigmusic.acm.illinois.edu">
   <MAINGROUP id="dCJA7p" name="GranularSynth">
     <GROUP id="{B33E77C0-B497-BCE5-A2C0-01FA67ED2164}" name="Source">
+      <FILE id="GwnTSZ" name="SynthKeyboard.h" compile="0" resource="0" file="Source/SynthKeyboard.h"/>
+      <FILE id="RMY1YY" name="GrainSynth.h" compile="0" resource="0" file="Source/GrainSynth.h"/>
       <FILE id="lonzf8" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
       <FILE id="GEBgiq" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
       <FILE id="Nf0ySz" name="MainComponent.cpp" compile="1" resource="0"
