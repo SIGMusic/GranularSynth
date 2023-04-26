@@ -8,8 +8,6 @@
 class GrainSynth : public juce::ToneGeneratorAudioSource
 {
 public:
-    static const int TABLE_SIZE = 4096;
-
     GrainSynth(const juce::AudioSampleBuffer& grain,
                    float grain_freq,
                    float attack_time = 0.1,
@@ -23,13 +21,27 @@ public:
         sustain_frac_(sustain_frac),
         release_time_(release_time)
     {
-        jassert(grain.getNumSamples() == TABLE_SIZE);
+        // jassert(grain.getNumSamples() == table_size_);
+        table_size_ = grain.getNumSamples();
     }
 
-    ~GrainSynth() override { /* Nothing */ }
+    // std::vector<std::vector<unsigned int>> ringbuf_hist_;
+
+    ~GrainSynth() override
+    {
+        /*
+        for (auto& ringbuf : ringbuf_hist_)
+        {
+            for (auto& elem : ringbuf)
+                std::cout << std::setw(5) << elem;
+            std::cout << std::endl;
+        }
+         */
+    }
 
     void noteOn(float amp)
     {
+        curr_amplitude_ = 0.0f;
         if (attack_time_ == 0.0f)
             adsr_state_ = Sustain;
         else
@@ -75,7 +87,7 @@ public:
         int /* parameter not needed */, double sampleRate) override
     {
         sample_rate_ = sampleRate;
-        trigger_samples_ = (float) TABLE_SIZE * grain_freq_ / (2 * freq_);
+        trigger_samples_ = (float) table_size_ * grain_freq_ / (2 * freq_);
     }
 
     /**
@@ -111,29 +123,30 @@ public:
     forcedinline float getNextSample() noexcept
     {
         jassert(curr_num_grains_ < max_num_grains_);
-        auto* grain_readptr = grain_.getReadPointer(1);
+        auto* grain_readptr = grain_.getReadPointer(0);
 
         if (accumulator_ > trigger_samples_ &&
             curr_num_grains_ < max_num_grains_)
         {
             ++curr_num_grains_;
-            grain_idx_ringbuf_[gidx_end_++] = 0;
+            ++gidx_end_;
             gidx_end_ %= max_num_grains_;
             accumulator_ -= trigger_samples_;
+            // ringbuf_hist_.push_back(std::vector<unsigned int>(grain_idx_ringbuf_, grain_idx_ringbuf_ + max_num_grains_)); // TODO
         }
 
         float outsample = 0.0f;
-        for (int idx_idx = gidx_start_;
-             idx_idx < gidx_start_ + curr_num_grains_;
-             ++idx_idx)
+        int end = gidx_start_ + curr_num_grains_;
+        for (int idx_idx = gidx_start_; idx_idx < end; ++idx_idx)
         {
             unsigned int grain_idx =
                 grain_idx_ringbuf_[idx_idx % max_num_grains_]++;
-            if (grain_idx >= TABLE_SIZE)
+            if (grain_idx >= table_size_)
             {
-                ++gidx_start_;
+                grain_idx_ringbuf_[gidx_start_++] = 0;
                 gidx_start_ %= max_num_grains_;
                 --curr_num_grains_;
+                // ringbuf_hist_.push_back(std::vector<unsigned int>(grain_idx_ringbuf_, grain_idx_ringbuf_ + max_num_grains_)); // TODO
                 continue;
             }
             outsample += grain_readptr[grain_idx];
@@ -195,13 +208,14 @@ private:
 
     // Begin grain data
     juce::AudioSampleBuffer grain_;
+    unsigned int table_size_;
     float grain_freq_;
     double sample_rate_ = 48000.0;
     float freq_ = 440.0f;
 
     float trigger_samples_ = 0.0f; // to be calculated
     float accumulator_ = 0.0f;
-    static const int max_num_grains_ = 128;
+    static const int max_num_grains_ = 32;
     unsigned int grain_idx_ringbuf_[max_num_grains_] = {0};
     unsigned int gidx_start_ = 0;
     unsigned int gidx_end_ = 1;

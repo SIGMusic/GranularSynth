@@ -4,12 +4,21 @@
               companyName="ACM SIGMusic" companyWebsite="sigmusic.acm.illinois.edu">
   <MAINGROUP id="dCJA7p" name="GranularSynth">
     <GROUP id="{B33E77C0-B497-BCE5-A2C0-01FA67ED2164}" name="Source">
+      <FILE id="mVPOZD" name="PitchDetector.cpp" compile="1" resource="0"
+            file="Source/PitchDetector.cpp"/>
+      <FILE id="NxcKMH" name="PitchDetector.h" compile="0" resource="0" file="Source/PitchDetector.h"/>
       <FILE id="GwnTSZ" name="SynthKeyboard.h" compile="0" resource="0" file="Source/SynthKeyboard.h"/>
       <FILE id="RMY1YY" name="GrainSynth.h" compile="0" resource="0" file="Source/GrainSynth.h"/>
       <FILE id="lonzf8" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
       <FILE id="GEBgiq" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
       <FILE id="Nf0ySz" name="MainComponent.cpp" compile="1" resource="0"
             file="Source/MainComponent.cpp"/>
+      <GROUP id="{51B160E4-6314-1587-2DCB-568AF0BC005E}" name="grains">
+        <FILE id="qYzonT" name="oboe.wav" compile="0" resource="1" file="Source/grains/oboe.wav"/>
+        <FILE id="avzSsY" name="sine.wav" compile="0" resource="1" file="Source/grains/sine.wav"/>
+        <FILE id="PSWq4P" name="trumpet0.wav" compile="0" resource="1" file="Source/grains/trumpet0.wav"/>
+        <FILE id="zBedd2" name="trumpet1.wav" compile="0" resource="1" file="Source/grains/trumpet1.wav"/>
+      </GROUP>
     </GROUP>
   </MAINGROUP>
   <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1"/>

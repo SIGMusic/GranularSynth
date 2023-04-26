@@ -1,7 +1,7 @@
 #include "MainComponent.h"
 
 //==============================================================================
-MainComponent::MainComponent() : audioSetupComp (audioDeviceManager, 0, 0, 0, 256,
+MainComponent::MainComponent() : audioSetupComp (deviceManager, 0, 0, 0, 256,
                                                  true, // showMidiInputOptions must be true
                                                  true,
                                                  true,
@@ -20,8 +20,7 @@ MainComponent::MainComponent() : audioSetupComp (audioDeviceManager, 0, 0, 0, 25
         setAudioChannels (2, 2);
     }
 
-    audioDeviceManager.initialise (0, 2, nullptr, true, {}, nullptr);
-    audioDeviceManager.addMidiInputDeviceCallback ({}, this);
+    deviceManager.addMidiInputDeviceCallback ({}, this);
 
     addAndMakeVisible(audioSetupComp);
 
@@ -55,11 +54,13 @@ MainComponent::MainComponent() : audioSetupComp (audioDeviceManager, 0, 0, 0, 25
     // Make sure you set the size of the component after
     // you add any child components.
     setSize (kWindowWidth, 400 + kKeyboardHeight + kSliderHeight);
+
+    resetSynth(nullptr, kDefaultGrainFreq);
 }
 
 MainComponent::~MainComponent()
 {
-    audioDeviceManager.removeMidiInputDeviceCallback ({}, this);
+    deviceManager.removeMidiInputDeviceCallback ({}, this);
     // This shuts down the audio device and clears the audio source.
     shutdownAudio();
 }
@@ -166,7 +167,7 @@ void MainComponent::grainDropCallback(int retval)
         // float grain_freq = std::stof(alert_window_.getTextEditorContents("Grain Frequency").toStdString());
         float grain_freq = 440.0;
         juce::File grain_file(grain_filepath_);
-        if (!resetSynth(grain_file, grain_freq))
+        if (!resetSynth(&grain_file, grain_freq))
         {
             juce::AlertWindow::showAsync(MessageBoxOptions()
                                             .withIconType(MessageBoxIconType::WarningIcon)
@@ -176,36 +177,44 @@ void MainComponent::grainDropCallback(int retval)
     }
 }
 
-bool MainComponent::resetSynth(juce::File& grain_file, float grain_freq)
+bool MainComponent::resetSynth(juce::File* grain_file, float grain_freq)
 {
     if (grain_freq < 1.0 || grain_freq > 20000.0)
         return false;
-    // The following adapted from ChatGPT https://chat.openai.com/chat
 
     // Create an AudioFormatReader object for the audio file
     juce::AudioFormatManager formatManager;
     formatManager.registerBasicFormats();
-    std::unique_ptr<AudioFormatReader> reader(formatManager.createReaderFor(grain_file));
+
+    juce::AudioFormatReader* raw_reader = nullptr;
+    if (!grain_file)
+    {
+        int grain_size;
+        const char* grain_data = BinaryData::getNamedResource("trumpet0_wav", grain_size);
+        auto instream = std::make_unique<MemoryInputStream>((const void*) grain_data,
+                                                            static_cast<size_t>(grain_size),
+                                                            false);
+        raw_reader = formatManager.createReaderFor(std::move(instream));
+    }
+    else
+    {
+        raw_reader = formatManager.createReaderFor(*grain_file);
+    }
+
+    auto reader = std::unique_ptr<AudioFormatReader>(raw_reader);
 
     if (reader != nullptr)
     {
-        // Create a buffer to hold the audio data
-        juce::AudioSampleBuffer buffer(reader->numChannels, GrainSynth::TABLE_SIZE);
+        auto buffer = std::make_unique<AudioSampleBuffer>(1, reader->lengthInSamples);
+  
+        reader->read(buffer.get(), 0, reader->lengthInSamples, 0, true, true);
 
-        // Read the first 4096 samples from the audio file into the buffer
-        reader->read(&buffer, 0, GrainSynth::TABLE_SIZE, 0, true, true);
+        dsp::WindowingFunction<float> window(buffer->getNumSamples(), dsp::WindowingFunction<float>::hann);
 
-        // Create a Hanning window function with the same length as the buffer
-        juce::dsp::WindowingFunction<float> window(buffer.getNumSamples(), dsp::WindowingFunction<float>::hann);
+        float* channelData = buffer->getWritePointer(0);
+        window.multiplyWithWindowingTable(channelData, buffer->getNumSamples());
 
-        // Apply the window to each channel in the buffer
-        for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
-        {
-            float* channelData = buffer.getWritePointer(channel);
-            window.multiplyWithWindowingTable(channelData, buffer.getNumSamples());
-        }
-
-        synth_ = std::make_unique<SynthKeyboard>(buffer, grain_freq);
+        synth_ = std::make_unique<SynthKeyboard>(*buffer, grain_freq);
 
         addAndMakeVisible(synth_.get());
 
