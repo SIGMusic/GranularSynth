@@ -51,11 +51,57 @@ MainComponent::MainComponent() : audioSetupComp (deviceManager, 0, 0, 0, 256,
     sustain_.addListener(this);
     release_.addListener(this);
 
+    setupBuiltinGrains();
+
     // Make sure you set the size of the component after
     // you add any child components.
     setSize (kWindowWidth, 400 + kKeyboardHeight + kSliderHeight);
+}
 
-    resetSynth(nullptr, kDefaultGrainFreq);
+void MainComponent::setupBuiltinGrains()
+{
+    grain_dropdown_.addItem("Custom Grain", 1);
+    grain_dropdown_.addSeparator();
+
+    for (int idx = 0; idx < BinaryData::namedResourceListSize; ++idx)
+    {
+        const char* rname = BinaryData::namedResourceList[idx];
+        std::string resource_name(rname);
+
+        size_t first_plus_pos = resource_name.find("_");
+        std::size_t second_plus_pos = resource_name.find("_", first_plus_pos + 1);
+
+        std::string grain_name = resource_name.substr(0, first_plus_pos);
+        std::string grain_freq_str = resource_name.substr(first_plus_pos + 1, second_plus_pos - first_plus_pos - 1);
+
+        std::cout << grain_name << std::endl;
+        std::cout << grain_freq_str << std::endl;
+
+        float freq = 0.0f;
+        try
+        {
+            freq = std::stof(grain_freq_str);  // parse substring2 as a float
+        }
+        catch (const std::invalid_argument e)
+        {
+            std::cerr << "Could not load grain: <" << rname << ">" << std::endl;
+            std::cerr << e.what() << std::endl;
+            continue;
+        }
+        catch (const std::out_of_range& e)
+        {
+            std::cerr << "Could not load grain: <" << rname << ">" << std::endl;
+            std::cerr << e.what() << std::endl;
+            continue;
+        }
+
+        builtin_grains_.push_back({rname, freq});
+        grain_dropdown_.addItem(grain_name, idx + kBuiltinGrainIdOffset);
+        fprintf(stderr, "HERE\n");
+    }
+
+    addAndMakeVisible(&grain_dropdown_);
+    grain_dropdown_.addListener(this);
 }
 
 MainComponent::~MainComponent()
@@ -105,6 +151,8 @@ void MainComponent::resized()
     {
         slider->setBounds(slider_bounds.removeFromLeft(kSliderWidth));
     }
+    auto dropdown_bounds = local_bounds.removeFromTop(kDropdownHeight);
+    grain_dropdown_.setBounds(dropdown_bounds);
     audioSetupComp.setBounds(local_bounds);
 }
 
@@ -173,7 +221,23 @@ void MainComponent::grainDropCallback(int retval)
                                             .withIconType(MessageBoxIconType::WarningIcon)
                                             .withTitle("Could not load grain")
                                             .withButton("OK"), nullptr);
+            return;
         }
+        grain_dropdown_.setSelectedId(kFileGrainId);
+    }
+}
+
+void MainComponent::comboBoxChanged(ComboBox* comboBoxThatHasChanged)
+{
+    if (comboBoxThatHasChanged == &grain_dropdown_)
+    {
+        int selected_id = comboBoxThatHasChanged->getSelectedId();
+        if (selected_id < kBuiltinGrainIdOffset)
+            return;
+
+        BuiltinGrain& sel_bg =
+            builtin_grains_[selected_id - kBuiltinGrainIdOffset];
+        resetSynth(sel_bg.rname, sel_bg.freq);
     }
 }
 
@@ -186,20 +250,33 @@ bool MainComponent::resetSynth(juce::File* grain_file, float grain_freq)
     juce::AudioFormatManager formatManager;
     formatManager.registerBasicFormats();
 
+    return resetSynth(formatManager.createReaderFor(*grain_file), grain_freq);
+}
+
+bool MainComponent::resetSynth(const char* resource_name, float grain_freq)
+{
+    if (grain_freq < 1.0 || grain_freq > 20000.0)
+        return false;
+
+    // Create an AudioFormatReader object for the audio file
+    juce::AudioFormatManager formatManager;
+    formatManager.registerBasicFormats();
+
     juce::AudioFormatReader* raw_reader = nullptr;
-    if (!grain_file)
-    {
-        int grain_size;
-        const char* grain_data = BinaryData::getNamedResource("trumpet0_wav", grain_size);
-        auto instream = std::make_unique<MemoryInputStream>((const void*) grain_data,
-                                                            static_cast<size_t>(grain_size),
-                                                            false);
-        raw_reader = formatManager.createReaderFor(std::move(instream));
-    }
-    else
-    {
-        raw_reader = formatManager.createReaderFor(*grain_file);
-    }
+    
+    int grain_size;
+    const char* grain_data = BinaryData::getNamedResource(resource_name, grain_size);
+    auto instream = std::make_unique<MemoryInputStream>((const void*) grain_data,
+                                                        static_cast<size_t>(grain_size),
+                                                        false);
+    return resetSynth(formatManager.createReaderFor(std::move(instream)),
+                      grain_freq);
+}
+
+bool MainComponent::resetSynth(juce::AudioFormatReader* raw_reader, float grain_freq)
+{
+    if (grain_freq < 1.0 || grain_freq > 20000.0)
+        return false;
 
     auto reader = std::unique_ptr<AudioFormatReader>(raw_reader);
 
@@ -223,6 +300,7 @@ bool MainComponent::resetSynth(juce::File* grain_file, float grain_freq)
 
         return true;
     }
+    fprintf(stderr, "Failed to initialize synth");
 
     synth_ = nullptr;
     return false;

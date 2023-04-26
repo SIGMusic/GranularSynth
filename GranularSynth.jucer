@@ -14,10 +14,20 @@
       <FILE id="Nf0ySz" name="MainComponent.cpp" compile="1" resource="0"
             file="Source/MainComponent.cpp"/>
       <GROUP id="{51B160E4-6314-1587-2DCB-568AF0BC005E}" name="grains">
-        <FILE id="qYzonT" name="oboe.wav" compile="0" resource="1" file="Source/grains/oboe.wav"/>
-        <FILE id="avzSsY" name="sine.wav" compile="0" resource="1" file="Source/grains/sine.wav"/>
-        <FILE id="PSWq4P" name="trumpet0.wav" compile="0" resource="1" file="Source/grains/trumpet0.wav"/>
-        <FILE id="zBedd2" name="trumpet1.wav" compile="0" resource="1" file="Source/grains/trumpet1.wav"/>
+        <FILE id="VTiWsc" name="bassoonA3.441.0..wav" compile="0" resource="1"
+              file="Source/grains/bassoonA3.441.0..wav"/>
+        <FILE id="xzx35L" name="fluteA3.441.0..wav" compile="0" resource="1"
+              file="Source/grains/fluteA3.441.0..wav"/>
+        <FILE id="FHGPEL" name="fluteA4.882.0..wav" compile="0" resource="1"
+              file="Source/grains/fluteA4.882.0..wav"/>
+        <FILE id="Cj7PT4" name="harpA4.436.63366336633663..wav" compile="0"
+              resource="1" file="Source/grains/harpA4.436.63366336633663..wav"/>
+        <FILE id="WniYRe" name="trumpet-muteA4.882.0..wav" compile="0" resource="1"
+              file="Source/grains/trumpet-muteA4.882.0..wav"/>
+        <FILE id="KbEVMb" name="trumpetA4.882.0..wav" compile="0" resource="1"
+              file="Source/grains/trumpetA4.882.0..wav"/>
+        <FILE id="S8TlJ7" name="trumpet1.220.wav" compile="0" resource="1"
+              file="Source/grains/trumpet1.220.wav"/>
       </GROUP>
     </GROUP>
   </MAINGROUP>

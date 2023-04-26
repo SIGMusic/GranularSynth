@@ -13,7 +13,8 @@
 class MainComponent  : public juce::AudioAppComponent,
                        public juce::MidiInputCallback,
                        public juce::Slider::Listener,
-                       public juce::FileDragAndDropTarget
+                       public juce::FileDragAndDropTarget,
+                       public juce::ComboBox::Listener
 {
 public:
     //==============================================================================
@@ -41,16 +42,20 @@ public:
 
     virtual bool isInterestedInFileDrag(const StringArray& files) override;
     virtual void filesDropped(const StringArray& files, int x, int y) override;
+    virtual void comboBoxChanged(ComboBox* comboBoxThatHasChanged) override;
     void grainDropCallback(int retval);
 private:
+    void setupBuiltinGrains();
+    bool resetSynth(juce::AudioFormatReader* raw_reader, float grain_freq);
     bool resetSynth(juce::File* grain_file, float grain_freq);
+    bool resetSynth(const char* resource_name, float grain_freq);
     //==============================================================================
 
-    static const int kDefaultGrainFreq = 220.0;
     static const int kWindowWidth = 800;
     static const int kKeyboardHeight = 100; // pixels
     static const int kSliderHeight = 300; // pixels
     static const int kSliderWidth = kWindowWidth / 4; // pixels
+    static const int kDropdownHeight = 30;
     std::unique_ptr<SynthKeyboard> synth_ = nullptr;
     juce::AudioDeviceSelectorComponent audioSetupComp;
 
@@ -58,6 +63,16 @@ private:
     juce::Slider decay_;
     juce::Slider sustain_;
     juce::Slider release_;
+
+    juce::ComboBox grain_dropdown_;
+    static const int kFileGrainId = 1;
+    static const int kBuiltinGrainIdOffset = 2;
+    typedef struct
+    {
+        const char* rname;
+        float freq;
+    } BuiltinGrain;
+    std::vector<BuiltinGrain> builtin_grains_;
 
     int samples_per_block_;
     double sample_rate_;
