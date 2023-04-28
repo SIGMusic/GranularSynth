@@ -14,7 +14,8 @@ class MainComponent  : public juce::AudioAppComponent,
                        public juce::MidiInputCallback,
                        public juce::Slider::Listener,
                        public juce::FileDragAndDropTarget,
-                       public juce::ComboBox::Listener
+                       public juce::ComboBox::Listener,
+                       public juce::ChangeListener
 {
 public:
     //==============================================================================
@@ -43,6 +44,7 @@ public:
     virtual bool isInterestedInFileDrag(const StringArray& files) override;
     virtual void filesDropped(const StringArray& files, int x, int y) override;
     virtual void comboBoxChanged(ComboBox* comboBoxThatHasChanged) override;
+    virtual void changeListenerCallback(ChangeBroadcaster* source) override;
     void grainDropCallback(int retval);
 private:
     void setupBuiltinGrains();
@@ -56,6 +58,8 @@ private:
     static const int kSliderHeight = 300; // pixels
     static const int kSliderWidth = kWindowWidth / 4; // pixels
     static const int kDropdownHeight = 30;
+    static const int kCutoffHeight = 40;
+    static const int kDefaultCutoff = 1000.0f;
     std::unique_ptr<SynthKeyboard> synth_ = nullptr;
     juce::AudioDeviceSelectorComponent audioSetupComp;
 
@@ -63,6 +67,7 @@ private:
     juce::Slider decay_;
     juce::Slider sustain_;
     juce::Slider release_;
+    juce::Slider cutoff_;
 
     juce::ComboBox grain_dropdown_;
     static const int kFileGrainId = 1;
@@ -76,8 +81,11 @@ private:
 
     int samples_per_block_;
     double sample_rate_;
+    juce::BigInteger num_chans = 2;
 
     juce::String grain_filepath_;
+
+    std::vector<juce::IIRFilter> lpfs_;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

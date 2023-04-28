@@ -14,20 +14,20 @@
       <FILE id="Nf0ySz" name="MainComponent.cpp" compile="1" resource="0"
             file="Source/MainComponent.cpp"/>
       <GROUP id="{51B160E4-6314-1587-2DCB-568AF0BC005E}" name="grains">
-        <FILE id="VTiWsc" name="bassoonA3.441.0..wav" compile="0" resource="1"
-              file="Source/grains/bassoonA3.441.0..wav"/>
-        <FILE id="xzx35L" name="fluteA3.441.0..wav" compile="0" resource="1"
-              file="Source/grains/fluteA3.441.0..wav"/>
-        <FILE id="FHGPEL" name="fluteA4.882.0..wav" compile="0" resource="1"
-              file="Source/grains/fluteA4.882.0..wav"/>
-        <FILE id="Cj7PT4" name="harpA4.436.63366336633663..wav" compile="0"
-              resource="1" file="Source/grains/harpA4.436.63366336633663..wav"/>
-        <FILE id="WniYRe" name="trumpet-muteA4.882.0..wav" compile="0" resource="1"
-              file="Source/grains/trumpet-muteA4.882.0..wav"/>
-        <FILE id="KbEVMb" name="trumpetA4.882.0..wav" compile="0" resource="1"
-              file="Source/grains/trumpetA4.882.0..wav"/>
         <FILE id="S8TlJ7" name="trumpet1.220.wav" compile="0" resource="1"
               file="Source/grains/trumpet1.220.wav"/>
+        <FILE id="J0jyvx" name="bassoonA3.441.0..wav" compile="0" resource="1"
+              file="Source/grains/bassoonA3.441.0..wav"/>
+        <FILE id="Kzqmvi" name="fluteA3.441.0..wav" compile="0" resource="1"
+              file="Source/grains/fluteA3.441.0..wav"/>
+        <FILE id="zG66VC" name="fluteA4.882.0..wav" compile="0" resource="1"
+              file="Source/grains/fluteA4.882.0..wav"/>
+        <FILE id="XAPoVe" name="harpA4.436.63366336633663..wav" compile="0"
+              resource="1" file="Source/grains/harpA4.436.63366336633663..wav"/>
+        <FILE id="EILAMD" name="trumpet-muteA4.882.0..wav" compile="0" resource="1"
+              file="Source/grains/trumpet-muteA4.882.0..wav"/>
+        <FILE id="e8v9ff" name="trumpetA4.882.0..wav" compile="0" resource="1"
+              file="Source/grains/trumpetA4.882.0..wav"/>
       </GROUP>
     </GROUP>
   </MAINGROUP>

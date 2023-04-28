@@ -12,15 +12,17 @@ MainComponent::MainComponent() : audioSetupComp (deviceManager, 0, 0, 0, 256,
         && ! juce::RuntimePermissions::isGranted (juce::RuntimePermissions::recordAudio))
     {
         juce::RuntimePermissions::request (juce::RuntimePermissions::recordAudio,
-                                           [&] (bool granted) { setAudioChannels (granted ? 2 : 0, 2); });
+                                           [&] (bool granted) { setAudioChannels (granted ? 1 : 0, num_chans.toInt64()); });
     }
     else
     {
         // Specify the number of input and output channels that we want to open
-        setAudioChannels (2, 2);
+        setAudioChannels (1, num_chans.toInt64());
     }
 
-    deviceManager.addMidiInputDeviceCallback ({}, this);
+    deviceManager.addMidiInputDeviceCallback({}, this);
+    deviceManager.addChangeListener(this);
+    lpfs_.resize(num_chans.toInt64());
 
     addAndMakeVisible(audioSetupComp);
 
@@ -41,15 +43,23 @@ MainComponent::MainComponent() : audioSetupComp (deviceManager, 0, 0, 0, 256,
     release_.setValue(0.1);
     release_.setTextBoxStyle(juce::Slider::TextBoxBelow, true, 50, 10);
 
+    cutoff_.setSliderStyle(juce::Slider::SliderStyle::LinearBar);
+    cutoff_.setRange(10.0, 20000.0);
+    cutoff_.setValue(1000.0);
+
     addAndMakeVisible(attack_);
     addAndMakeVisible(decay_);
     addAndMakeVisible(sustain_);
     addAndMakeVisible(release_);
 
+    addAndMakeVisible(cutoff_);
+
     attack_.addListener(this);
     decay_.addListener(this);
     sustain_.addListener(this);
     release_.addListener(this);
+
+    cutoff_.addListener(this);
 
     setupBuiltinGrains();
 
@@ -118,12 +128,24 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
     sample_rate_ = sampleRate;
     if (synth_)
         synth_->prepareToPlay(samplesPerBlockExpected, sampleRate);
+    for (auto& lpf : lpfs_)
+    {
+        lpf.setCoefficients(
+            juce::IIRCoefficients::makeLowPass(sampleRate, kDefaultCutoff));
+    }
 }
 
 void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill)
 {
     if (synth_)
+    {
         synth_->getNextAudioBlock(bufferToFill);
+        for (int i = 0; i < bufferToFill.buffer->getNumChannels(); ++i)
+        {
+            lpfs_[i].processSamples(bufferToFill.buffer->getWritePointer(i),
+                                    bufferToFill.numSamples);
+        }
+    }
 }
 
 void MainComponent::releaseResources()
@@ -142,17 +164,21 @@ void MainComponent::paint (juce::Graphics& g)
 void MainComponent::resized()
 {
     auto local_bounds = getLocalBounds();
+
     if (synth_)
         synth_->setBounds(local_bounds.removeFromBottom(kKeyboardHeight));
     else
         (void) local_bounds.removeFromBottom(kKeyboardHeight);
+
     auto slider_bounds = local_bounds.removeFromBottom(kSliderHeight);
     for (auto* slider : {&attack_, &decay_, &sustain_, &release_})
     {
         slider->setBounds(slider_bounds.removeFromLeft(kSliderWidth));
     }
-    auto dropdown_bounds = local_bounds.removeFromTop(kDropdownHeight);
-    grain_dropdown_.setBounds(dropdown_bounds);
+
+    cutoff_.setBounds(local_bounds.removeFromBottom(kCutoffHeight));
+    grain_dropdown_.setBounds(local_bounds.removeFromTop(kDropdownHeight));
+
     audioSetupComp.setBounds(local_bounds);
 }
 
@@ -188,6 +214,14 @@ void MainComponent::sliderValueChanged(juce::Slider* slider)
                 voice->setRelease(release_.getValue());
             }
         }
+        else if (slider == &cutoff_)
+        {
+            for (auto& lpf : lpfs_)
+            {
+                lpf.setCoefficients(
+                    juce::IIRCoefficients::makeLowPass(sample_rate_, slider->getValue()));
+            }
+        }
     }
 }
 
@@ -206,6 +240,17 @@ void MainComponent::filesDropped(const StringArray& files, int /**/, int /**/)
                           .withTitle ("Enter a grain frequency")
                           .withButton ("OK")
                           .withButton ("Cancel"), [this](int retval){ grainDropCallback(retval); });
+}
+
+void MainComponent::changeListenerCallback(ChangeBroadcaster* source)
+{
+    juce::BigInteger curr_num_chans;
+    if (source == &deviceManager &&
+        (curr_num_chans = deviceManager.getAudioDeviceSetup().outputChannels) != num_chans)
+    {
+        num_chans = curr_num_chans;
+        lpfs_.resize(num_chans.toInt64());
+    }
 }
 
 void MainComponent::grainDropCallback(int retval)

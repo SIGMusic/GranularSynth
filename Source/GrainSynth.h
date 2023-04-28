@@ -41,7 +41,7 @@ public:
 
     void noteOn(float amp)
     {
-        curr_amplitude_ = 0.0f;
+        // curr_amplitude_ = 0.0f;
         if (attack_time_ == 0.0f)
             adsr_state_ = Sustain;
         else
@@ -215,7 +215,7 @@ private:
 
     float trigger_samples_ = 0.0f; // to be calculated
     float accumulator_ = 0.0f;
-    static const int max_num_grains_ = 32;
+    static const int max_num_grains_ = 64;
     unsigned int grain_idx_ringbuf_[max_num_grains_] = {0};
     unsigned int gidx_start_ = 0;
     unsigned int gidx_end_ = 1;

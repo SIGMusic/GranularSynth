@@ -98,7 +98,7 @@ public:
             voice_mapping_[midiNoteNumber] = voice;
             auto freq = midiToFreq((juce::uint8) midiNoteNumber);
             voice->setFrequency(freq);
-            voice->noteOn(1.0 / max_voices_);
+            voice->noteOn(0.5 / max_voices_);
             free_voices_[num_free_voices_ - 1] = nullptr;
             --num_free_voices_;
         }
