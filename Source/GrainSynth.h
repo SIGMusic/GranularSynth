@@ -2,6 +2,8 @@
 
 #include <JuceHeader.h>
 
+#include "CustomADSR.h"
+
 //==============================================================================
 /*
 */
@@ -16,42 +18,24 @@ public:
                    float release_time = 0.1) :
         grain_(grain),
         grain_freq_(grain_freq),
-        attack_time_(attack_time),
-        decay_time_(decay_time),
-        sustain_frac_(sustain_frac),
-        release_time_(release_time)
+        adsr_parameters_(CustomADSR::Parameters(attack_time, decay_time, sustain_frac, release_time)),
+        adsr_(CustomADSR(adsr_parameters_))
     {
-        // jassert(grain.getNumSamples() == table_size_);
         table_size_ = grain.getNumSamples();
     }
 
-    // std::vector<std::vector<unsigned int>> ringbuf_hist_;
-
     ~GrainSynth() override
-    {
-        /*
-        for (auto& ringbuf : ringbuf_hist_)
-        {
-            for (auto& elem : ringbuf)
-                std::cout << std::setw(5) << elem;
-            std::cout << std::endl;
-        }
-         */
-    }
+    { /* Nothing */ }
 
     void noteOn(float amp)
     {
-        // curr_amplitude_ = 0.0f;
-        if (attack_time_ == 0.0f)
-            adsr_state_ = Sustain;
-        else
-            adsr_state_ = Attack;
-        max_amplitude_ = amp;
+        adsr_.noteOn();
+        amp_ = amp;
     }
 
     void noteOff()
     {
-        adsr_state_ = Release;
+        adsr_.noteOff();
     }
 
     void setFrequency(float frequency)
@@ -62,22 +46,34 @@ public:
 
     void setAttack(float attack_time)
     {
-        attack_time_ = attack_time;
+        adsr_parameters_.attack = attack_time;
+        adsr_parameters_.env_resolution = 256;
+        adsr_parameters_.attackEnv = [](float s) { return std::powf(s, 0.5); };
+        adsr_.setParameters(adsr_parameters_);
+        adsr_.reset();
     }
 
     void setDecay(float decay_time)
     {
-        decay_time_ = decay_time;
+        adsr_parameters_.decay = decay_time;
+        adsr_.setParameters(adsr_parameters_);
+        adsr_.reset();
     }
  
     void setSustain(float sustain_frac)
     {
-        sustain_frac_ = sustain_frac;
+        adsr_parameters_.sustain = sustain_frac;
+        adsr_.setParameters(adsr_parameters_);
+        adsr_.reset();
     }
 
     void setRelease(float release_time)
     {
-        release_time_ = release_time;
+        adsr_parameters_.release = release_time;
+        adsr_parameters_.env_resolution = 256;
+        adsr_parameters_.releaseEnv = [](float s) { return std::exp(-s); };
+        adsr_.setParameters(adsr_parameters_);
+        adsr_.reset();
     }
 
     /**
@@ -88,6 +84,7 @@ public:
     {
         sample_rate_ = sampleRate;
         trigger_samples_ = (float) table_size_ * grain_freq_ / (2 * freq_);
+        adsr_.setSampleRate(sampleRate);
     }
 
     /**
@@ -101,7 +98,7 @@ public:
 
         for (unsigned int idx = 0; idx < bufferToFill.numSamples; ++idx)
         {
-            buf0[idx] = calcAmplitude() * getNextSample();
+            buf0[idx] = adsr_.getNextSample() * getNextSample() * amp_;
         }
 
         // Duplicate signal across all channels
@@ -157,55 +154,6 @@ public:
     }
 
 private:
-
-    float calcAmplitude()
-    {
-        // all in units of amplitude per sample
-        int attack_samples = fmax(sample_rate_ * attack_time_, 1);
-        int decay_samples = fmax(sample_rate_ * decay_time_, 1);
-        int release_samples = fmax(sample_rate_ * release_time_, 1);
-
-        float attack_rate = max_amplitude_ / attack_samples;
-        float decay_rate = (max_amplitude_ * (1 - sustain_frac_)) / decay_samples;
-        float release_rate = (max_amplitude_ * sustain_frac_) / release_samples;
-
-        switch (adsr_state_)
-        {
-            case Attack:
-                if (curr_amplitude_ >= max_amplitude_)
-                {
-                    curr_amplitude_ = max_amplitude_;
-                    adsr_state_ = Decay;
-                    break;
-                }
-                curr_amplitude_ += attack_rate;
-                break;
-            case Decay:
-                if (curr_amplitude_ <= sustain_frac_ * max_amplitude_)
-                {
-                    curr_amplitude_ = sustain_frac_ * max_amplitude_;
-                    adsr_state_ = Sustain;
-                    break;
-                }
-                curr_amplitude_ -= decay_rate;
-                break;
-            case Sustain:
-                curr_amplitude_ = sustain_frac_ * max_amplitude_;
-                break;
-            case Release:
-                if (curr_amplitude_ <= 0)
-                {
-                    curr_amplitude_ = 0;
-                    break;
-                }
-                curr_amplitude_ -= release_rate;
-                break;
-        }
-
-        return curr_amplitude_;
-    }
- 
-
     // Begin grain data
     juce::AudioSampleBuffer grain_;
     unsigned int table_size_;
@@ -222,22 +170,9 @@ private:
     unsigned int curr_num_grains_ = 1;
     // End grain data
 
-    // Begin ADSR data
-    typedef enum
-    {
-        Attack,
-        Decay,
-        Sustain,
-        Release
-    } State;
-    State adsr_state_;
-    float max_amplitude_ = 0.0f;
-    float curr_amplitude_ = 0.0f;
-    float attack_time_;
-    float decay_time_;
-    float sustain_frac_;         // fraction of maximum amplitude to sustain
-    float release_time_;
-    // End ADSR data
+    CustomADSR::Parameters adsr_parameters_;
+    CustomADSR adsr_;
+    float amp_ = 0.0f;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GrainSynth)
 };
