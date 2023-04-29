@@ -19,11 +19,34 @@ public:
 
   struct Parameters : public juce::ADSR::Parameters
   {
+    template <int num, int den>
+    static inline Envelope EXP_GRO_ENV = [](float x)
+    {
+        return (static_cast<float>(den) / num) * std::log((std::exp(static_cast<float>(num) / den) - 1.0f) * x + 1.0f);
+    };
+
+    template <int num, int den>
+    static inline Envelope EXP_DEC_ENV = [](float x)
+    {
+        return (-static_cast<float>(den) / num) * std::log((std::exp(static_cast<float>(num) / den) - 1) * x + 1.0f) + 1.0f;
+    };
+
+    template <int num, int den>
+    static inline Envelope POLY_ENV = [](float x)
+    {
+        return std::powf(x, static_cast<float>(num) / den);
+    };
+
     Parameters() = default;
 
-    Parameters(float a, float d, float s, float r)
-      : juce::ADSR::Parameters(a, d, s, r)
-    { /* Nothing */ }
+    Parameters(float a, float d, float s, float r, int env_res=2, float max_amp=1.0f)
+      : juce::ADSR::Parameters(a, d, s, r),
+        env_resolution(env_res),
+        maxAmp(max_amp)
+    {
+        jassert(env_res >= 2 && env_res <= 4096);
+        jassert(max_amp >= 0.0f && max_amp <= 1.0f);
+    }
 
     Parameters(float attackTimeSeconds,
                float decayTimeSeconds,
@@ -38,20 +61,21 @@ public:
                                decayTimeSeconds,
                                sustainTimeSeconds,
                                releaseTimeSeconds),
+        env_resolution(env_resolution),
         maxAmp(maxAmplitude),
         attackEnv(attackEnvFunc),
         decayEnv(decayEnvFunc),
-        releaseEnv(releaseEnvFunc),
-        env_resolution(env_resolution)
+        releaseEnv(releaseEnvFunc)
     {
       jassert(env_resolution >= 2 && env_resolution <= 4096 /* arbitrary */);
+        jassert(maxAmplitude >= 0.0f && maxAmplitude <= 1.0f);
     }
 
+    size_t env_resolution = 2; // number of tabulations for each envelope
     float maxAmp = 1.0f;
     Envelope attackEnv = [](float x) { return x; },
              decayEnv = [](float x) { return -x; },
              releaseEnv = [](float x) { return -x; };
-    size_t env_resolution = 2; // number of tabulations for each envelope
   };
 
   CustomADSR(const Parameters& newParameters);

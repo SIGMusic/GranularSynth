@@ -191,6 +191,7 @@ void CustomADSR::applyEnvelopeToBuffer(AudioBuffer<FloatType>& buffer, int start
 
 void CustomADSR::gotoState(State s) noexcept
 {
+  float from_amp = curr_amplitude_; // TODO
   switch (s)
   {
     case Idle:
@@ -208,7 +209,7 @@ void CustomADSR::gotoState(State s) noexcept
       adsr_state_ = Decay;
       decay_samples_ = 0;
       decay_idx_ = 0;
-      curr_amplitude_ = parameters_.maxAmp;
+      curr_amplitude_ = fmin(parameters_.maxAmp, curr_amplitude_);
       curr_decay_rate_ = (decay_env_table_[1] - decay_env_table_[0]) *
           (curr_amplitude_ - parameters_.sustain);
       break;
@@ -227,6 +228,8 @@ void CustomADSR::gotoState(State s) noexcept
       break;
   }
 
+  std::cerr << "from amp: " << std::setw(10) << std::to_string(from_amp); // TODO
+  std::cerr << "to amp: " << std::setw(10) << std::to_string(curr_amplitude_) << std::endl; // TODO
   std::cerr << "from: " << std::to_string(s) << " to: " << std::to_string(adsr_state_) << std::endl; // TODO
 }
 
@@ -293,7 +296,7 @@ void CustomADSR::recalculateRates() noexcept
   release_table_rate_ = static_cast<int>(calc_table_rate(parameters_.release));
 
   // get rate of change per sample increment
-  for (int i = 1; i <= parameters_.env_resolution; ++i)
+  for (int i = 0; i <= parameters_.env_resolution; ++i)
   {
     attack_env_table_[i] /= calc_table_rate(parameters_.attack);
     decay_env_table_[i] /= calc_table_rate(parameters_.decay);
@@ -307,11 +310,7 @@ void CustomADSR::tabulateEnvelopes()
   decay_env_table_.resize(parameters_.env_resolution + 1);
   release_env_table_.resize(parameters_.env_resolution + 1);
 
-  attack_env_table_[0] = 0.0f;
-  decay_env_table_[0] = 0.0f;
-  release_env_table_[0] = 0.0f;
-
-  for (int i = 1; i <= parameters_.env_resolution; ++i)
+  for (int i = 0; i <= parameters_.env_resolution; ++i)
   {
     attack_env_table_[i] = parameters_.attackEnv((float) i / parameters_.env_resolution);
     decay_env_table_[i] = parameters_.decayEnv((float) i / parameters_.env_resolution);

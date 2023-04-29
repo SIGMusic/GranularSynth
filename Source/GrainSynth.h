@@ -18,7 +18,7 @@ public:
                    float release_time = 0.1) :
         grain_(grain),
         grain_freq_(grain_freq),
-        adsr_parameters_(CustomADSR::Parameters(attack_time, decay_time, sustain_frac, release_time)),
+        adsr_parameters_(CustomADSR::Parameters(attack_time, decay_time, sustain_frac, release_time, 256)),
         adsr_(CustomADSR(adsr_parameters_))
     {
         table_size_ = grain.getNumSamples();
@@ -47,8 +47,7 @@ public:
     void setAttack(float attack_time)
     {
         adsr_parameters_.attack = attack_time;
-        adsr_parameters_.env_resolution = 256;
-        adsr_parameters_.attackEnv = [](float s) { return std::powf(s, 0.5); };
+        adsr_parameters_.attackEnv = CustomADSR::Parameters::EXP_GRO_ENV<4, 1>;
         adsr_.setParameters(adsr_parameters_);
         adsr_.reset();
     }
@@ -57,6 +56,7 @@ public:
     {
         adsr_parameters_.decay = decay_time;
         adsr_.setParameters(adsr_parameters_);
+        adsr_parameters_.decayEnv = CustomADSR::Parameters::EXP_DEC_ENV<3, 1>;
         adsr_.reset();
     }
  
@@ -70,8 +70,7 @@ public:
     void setRelease(float release_time)
     {
         adsr_parameters_.release = release_time;
-        adsr_parameters_.env_resolution = 256;
-        adsr_parameters_.releaseEnv = [](float s) { return std::exp(-s); };
+        adsr_parameters_.releaseEnv = CustomADSR::Parameters::EXP_DEC_ENV<3, 1>;
         adsr_.setParameters(adsr_parameters_);
         adsr_.reset();
     }

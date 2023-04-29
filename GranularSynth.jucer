@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="TAN8NM" name="GranularSynth" projectType="guiapp" jucerFormatVersion="1"
-              companyName="ACM SIGMusic" companyWebsite="sigmusic.acm.illinois.edu">
+              companyName="ACM SIGMusic" companyWebsite="sigmusic.acm.illinois.edu"
+              cppLanguageStandard="20">
   <MAINGROUP id="dCJA7p" name="GranularSynth">
     <GROUP id="{B33E77C0-B497-BCE5-A2C0-01FA67ED2164}" name="Source">
       <FILE id="NYoL4W" name="CustomADSR.cpp" compile="1" resource="0" file="Source/CustomADSR.cpp"/>
