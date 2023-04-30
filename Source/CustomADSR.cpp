@@ -50,6 +50,7 @@ void CustomADSR::setSampleRate(double newSampleRate) noexcept
   recalculateRates();
     reset();
 
+#ifdef DEBUG
     // TODO
     for (auto& t : {attack_env_table_, decay_env_table_, release_env_table_})
     {
@@ -59,6 +60,7 @@ void CustomADSR::setSampleRate(double newSampleRate) noexcept
         }
         std::cerr << std::endl;
     }
+#endif
 }
 
 void CustomADSR::reset() noexcept
@@ -116,9 +118,6 @@ float CustomADSR::getNextSample() noexcept
       break;
 
     case Attack:
-      // std::cerr << std::setw(10) << std::to_string(curr_amplitude_) << std::endl; // TODO
-      // std::cerr << std::setw(10) << std::to_string(curr_attack_rate_) << std::endl; // TODO
-      // std::cerr << std::setw(10) << std::to_string(attack_idx_) << std::endl;
       if (curr_amplitude_ >= parameters_.maxAmp)
       {
         gotoState(Decay);
@@ -228,9 +227,11 @@ void CustomADSR::gotoState(State s) noexcept
       break;
   }
 
+    #ifdef DEBUG
   std::cerr << "from amp: " << std::setw(10) << std::to_string(from_amp); // TODO
   std::cerr << "to amp: " << std::setw(10) << std::to_string(curr_amplitude_) << std::endl; // TODO
   std::cerr << "from: " << std::to_string(s) << " to: " << std::to_string(adsr_state_) << std::endl; // TODO
+    #endif
 }
 
 void CustomADSR::calcRate(State s) noexcept

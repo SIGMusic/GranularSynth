@@ -75,6 +75,11 @@ public:
         adsr_.reset();
     }
 
+    bool isActive()
+    {
+        return adsr_.isActive();
+    }
+
     /**
     Calculates the trigger frequency of the grain
     */

@@ -87,6 +87,8 @@ public:
                               int midiNoteNumber,
                               float velocity) override
     {
+        checkOffVoices();
+
         if (voice_mapping_.find(midiNoteNumber) != voice_mapping_.end())
         {
             voice_mapping_[midiNoteNumber]->setFrequency(
@@ -115,7 +117,7 @@ public:
             auto* voice = voice_mapping_[midiNoteNumber];
             voice->noteOff();
             voice_mapping_.erase(iter);
-            free_voices_[num_free_voices_++] = voice;
+            addOffVoice(voice);
         }
     }
 
@@ -135,13 +137,37 @@ public:
     }
 
 private:
-    // TODO
-    static const int max_voices_ = 8;
+    // Could make this faster with multithreading
+    forcedinline void checkOffVoices()
+    {
+        GrainSynth* voice;
+        if (num_off_voices_ > 0 &&
+            !(voice = off_voices_[ov_start_idx_])->isActive())
+        {
+            free_voices_[num_free_voices_++] = voice;
+            off_voices_[ov_start_idx_] = nullptr;
+            ov_start_idx_ = (ov_start_idx_ + 1) % max_voices_;
+            --num_off_voices_;
+        }
+    }
+
+    void addOffVoice(GrainSynth* voice)
+    {
+        off_voices_[ov_end_idx_] = voice;
+        ov_end_idx_ = (ov_end_idx_ + 1) % max_voices_;
+        ++num_off_voices_;
+    }
+
+    static const int max_voices_ = 32;
     juce::OwnedArray<GrainSynth> voices_;
     juce::MixerAudioSource mixer_;
 
+    int num_off_voices_ = 0;
+    int ov_start_idx_ = 0;
+    int ov_end_idx_ = 0;
+    GrainSynth* off_voices_[max_voices_]; // voices turned off, but release not yet finished
     int num_free_voices_ = 0;
-    GrainSynth* free_voices_[max_voices_];
+    GrainSynth* free_voices_[max_voices_]; // voices ready to be used
     unordered_map<int, GrainSynth*> voice_mapping_;
 
     juce::MidiKeyboardState midi_keyboard_state_;
