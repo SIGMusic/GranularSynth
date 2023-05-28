@@ -225,22 +225,22 @@ void MainComponent::sliderValueChanged(juce::Slider* slider)
     }
 }
 
-bool MainComponent::isInterestedInFileDrag(const StringArray& files)
-{
-    return files.size() == 1;
-}
+//bool MainComponent::isInterestedInFileDrag(const StringArray& files)
+//{
+//    return files.size() == 1;
+//}
 
-void MainComponent::filesDropped(const StringArray& files, int /**/, int /**/)
-{
-    grain_filepath_.clear();
-    grain_filepath_ = files[0];
-
-   AlertWindow::showAsync (MessageBoxOptions()
-                          .withIconType (MessageBoxIconType::QuestionIcon)
-                          .withTitle ("Enter a grain frequency")
-                          .withButton ("OK")
-                          .withButton ("Cancel"), [this](int retval){ grainDropCallback(retval); });
-}
+//void MainComponent::filesDropped(const StringArray& files, int /**/, int /**/)
+//{
+//    grain_filepath_.clear();
+//    grain_filepath_ = files[0];
+//
+//   AlertWindow::showAsync (MessageBoxOptions()
+//                          .withIconType (MessageBoxIconType::QuestionIcon)
+//                          .withTitle ("Enter a grain frequency")
+//                          .withButton ("OK")
+//                          .withButton ("Cancel"), [this](int retval){ grainDropCallback(retval); });
+//}
 
 void MainComponent::changeListenerCallback(ChangeBroadcaster* source)
 {
@@ -253,24 +253,24 @@ void MainComponent::changeListenerCallback(ChangeBroadcaster* source)
     }
 }
 
-void MainComponent::grainDropCallback(int retval)
-{
-    if (retval == 1)
-    {
-        // float grain_freq = std::stof(alert_window_.getTextEditorContents("Grain Frequency").toStdString());
-        float grain_freq = 440.0;
-        juce::File grain_file(grain_filepath_);
-        if (!resetSynth(&grain_file, grain_freq))
-        {
-            juce::AlertWindow::showAsync(MessageBoxOptions()
-                                            .withIconType(MessageBoxIconType::WarningIcon)
-                                            .withTitle("Could not load grain")
-                                            .withButton("OK"), nullptr);
-            return;
-        }
-        grain_dropdown_.setSelectedId(kFileGrainId);
-    }
-}
+//void MainComponent::grainDropCallback(int retval)
+//{
+//    if (retval == 1)
+//    {
+//        // float grain_freq = std::stof(alert_window_.getTextEditorContents("Grain Frequency").toStdString());
+//        float grain_freq = 440.0;
+//        juce::File grain_file(grain_filepath_);
+//        if (!resetSynth(&grain_file, grain_freq))
+//        {
+//            juce::AlertWindow::showAsync(MessageBoxOptions()
+//                                            .withIconType(MessageBoxIconType::WarningIcon)
+//                                            .withTitle("Could not load grain")
+//                                            .withButton("OK"), nullptr);
+//            return;
+//        }
+//        grain_dropdown_.setSelectedId(kFileGrainId);
+//    }
+//}
 
 void MainComponent::comboBoxChanged(ComboBox* comboBoxThatHasChanged)
 {

@@ -13,7 +13,7 @@
 class MainComponent  : public juce::AudioAppComponent,
                        public juce::MidiInputCallback,
                        public juce::Slider::Listener,
-                       public juce::FileDragAndDropTarget,
+                       // public juce::FileDragAndDropTarget,
                        public juce::ComboBox::Listener,
                        public juce::ChangeListener
 {
@@ -41,11 +41,11 @@ public:
 
     virtual void sliderValueChanged(juce::Slider* slider) override;
 
-    virtual bool isInterestedInFileDrag(const StringArray& files) override;
-    virtual void filesDropped(const StringArray& files, int x, int y) override;
+//    virtual bool isInterestedInFileDrag(const StringArray& files) override;
+//    virtual void filesDropped(const StringArray& files, int x, int y) override;
     virtual void comboBoxChanged(ComboBox* comboBoxThatHasChanged) override;
     virtual void changeListenerCallback(ChangeBroadcaster* source) override;
-    void grainDropCallback(int retval);
+//    void grainDropCallback(int retval);
 private:
     void setupBuiltinGrains();
     bool resetSynth(juce::AudioFormatReader* raw_reader, float grain_freq);
